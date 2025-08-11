@@ -40,21 +40,21 @@ public with sharing class ContactTriggerHandler {
     
     public static void handleContactUpdate(List<Contact> triggerOldContacts, List<Contact> triggerNewContacts)
     {
-        List<String> fieldsToCheck = new List<String>{'FirstName', 'LastName', 'Email', 'Phone', 'AccoundId'};
-        List<Contact> historicalContacts = new List<Contact>();
+        List<String> fieldsToCheck = new List<String>{'FirstName', 'LastName', 'Email', 'Phone', 'AccountId'};
+        List<ContactHistory__c> historicalContacts = new List<Contact>();
         for(Integer i=0; i<triggerOldContacts.size();i++)
         {
             Map<String, Object> old_values = triggerOldContacts[i].getPopulatedFieldsAsMap();
             Map<String, Object> new_values = triggerNewContacts[i].getPopulatedFieldsAsMap();
             List<String> different_fields = new List<String>();
             for(String fieldName: fieldsToCheck){
-                if(old_values[i].get(fieldname) != new_values[i].get(fieldname)){
+                if(old_values.get(fieldname) != new_values.get(fieldname)){
                     different_fields.add(fieldname);
                 }
             }
             for(String field : different_fields){
-                Contact c = new Contact(
-                    Contact=triggerOldContacts[i].Id,
+                ContactHistory__c c = new ContactHistory__c(
+                    Contact__c=triggerOldContacts[i].Id,
                     Name=triggerOldContacts[i].Name+' '+triggerOldContacts[i].Id+' Update',
                     Action__c = 'Update',
                     Timestamp__c = System.now(),
