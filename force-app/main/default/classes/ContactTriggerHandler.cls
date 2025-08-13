@@ -1,47 +1,48 @@
 public with sharing class ContactTriggerHandler {
-    public static void handleAccountIdDelete()
-    {
-        
-    }
+    public enum Operations{CREATE_CONTACT, DELETE_CONTACT}
     
-    public static void handleBlankFields()
+    public static void checkContactUpdate(Map<Id, Contact> oldMap, List<Contact> triggerNew)
     {
-        
-    }
-    
-    public static void handleContactCreate(List<Contact> triggerNewContacts)
-    {
-        List<Contact> contactsToInsert = new List<Contact>();
-        for(Contact c : triggerNewContacts){
-            Contact history_contact = new Contact(
-                Contact = triggerNewContacts.Id,
-            History_name__c = 'Insert '+triggerNewContacts.Name+' '+triggerNewContacts.Id,
-            Action__c = 'Insert',
-            Timestamp__c = System.now()
-                );
-            contactsToInsert.add(history_contact);
+        for(Contact c : triggerNew)
+        {
+            if(c.AccountId == null && oldMap.get(c.Id).AccountId != null)
+            {
+                c.AccountId.addError('Unable to remove account field value');
+            }
+            if(c.Email == null && c.Phone == null)
+            {
+                c.Email.addError('Please provide phone or email value');
+                c.Phone.addError('Please provide phone or email value');
+            }
         }
-        insert contactsToInsert;
     }
     
-    public static void handleContactDelete(List<Contact> triggerOldContacts)
+    public static void createContactHistory(List<Contact> triggerContacts, Operations operation)
     {
-        List<Contact> contactsToInsert = new List<Contact>();
-        for(Contact c : triggerOldContacts){
-            Contact history_contact = new Contact(
-                History_name__c = 'Delete '+triggerOldContacts.Name+' '+triggerOldContacts.Id,
-            Action__c = 'Delete',
-            Timestamp__c = System.now()
-                );
-            contactsToInsert.add(history_contact);
+        List<Contact_History__c> historyToInsert = new List<Contact_History__c>();
+        for(Contact c : triggerContacts){
+            Contact_History__c history = new Contact_History__c();
+            if(operation==Operations.CREATE_CONTACT){
+                history.Contact__c = c.Id;
+                history.Name = 'Insert ';
+                history.Action__c = 'Insert';
+            }
+            else{
+                history.Name = 'Delete ';
+                history.Action__c = 'Delete';
+            }
+            history.Name += c.Name + ' '+c.Id;
+            history.Timestamp__c = System.now();
+            historyToInsert.add(history);
         }
-        insert contactsToInsert;
+        insert historyToInsert;
     }
+    
     
     public static void handleContactUpdate(List<Contact> triggerOldContacts, List<Contact> triggerNewContacts)
     {
         List<String> fieldsToCheck = new List<String>{'FirstName', 'LastName', 'Email', 'Phone', 'AccountId'};
-        List<ContactHistory__c> historicalContacts = new List<Contact>();
+        List<Contact_History__c> historicalContacts = new List<Contact_History__c>();
         for(Integer i=0; i<triggerOldContacts.size();i++)
         {
             Map<String, Object> old_values = triggerOldContacts[i].getPopulatedFieldsAsMap();
@@ -53,15 +54,14 @@ public with sharing class ContactTriggerHandler {
                 }
             }
             for(String field : different_fields){
-                ContactHistory__c c = new ContactHistory__c(
-                    Contact__c=triggerOldContacts[i].Id,
-                    Name=triggerOldContacts[i].Name+' '+triggerOldContacts[i].Id+' Update',
-                    Action__c = 'Update',
-                    Timestamp__c = System.now(),
-                    NewValue__c = new_values.get(field),
-                    OldValue__c = old_values.get(field),
-                    EditedField__c = field
-                );
+                Contact_History__c c = new Contact_History__c();
+                c.Contact__c=triggerOldContacts[i].Id;
+                c.Name=triggerOldContacts[i].Name+' '+triggerOldContacts[i].Id+' Update';
+                c.Action__c = 'Update';
+                c.Timestamp__c = System.now();
+                c.New_value__c = (String)new_values.get(field);
+                c.Old_value__c = (String)old_values.get(field);
+                c.Edited_field_name__c = field;
                 historicalContacts.add(c);
             }
         }
