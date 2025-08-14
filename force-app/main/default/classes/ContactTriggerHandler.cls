@@ -31,7 +31,7 @@ public with sharing class ContactTriggerHandler {
                 history.Name = 'Delete ';
                 history.Action__c = 'Delete';
             }
-            history.Name += c.Name + ' '+c.Id;
+            history.Name += c.FirstName + ' '+c.LastName + ' '+c.Id;
             history.Timestamp__c = System.now();
             historyToInsert.add(history);
         }
@@ -56,7 +56,7 @@ public with sharing class ContactTriggerHandler {
             for(String field : different_fields){
                 Contact_History__c c = new Contact_History__c();
                 c.Contact__c=triggerOldContacts[i].Id;
-                c.Name=triggerOldContacts[i].Name+' '+triggerOldContacts[i].Id+' Update';
+                c.Name=triggerOldContacts[i].FirstName+' '+triggerOldContacts[i].LastName+' '+triggerOldContacts[i].Id+' Update';
                 c.Action__c = 'Update';
                 c.Timestamp__c = System.now();
                 c.New_value__c = (String)new_values.get(field);
